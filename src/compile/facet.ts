@@ -265,6 +265,8 @@ export class FacetModel extends ModelWithField {
           ...(hasRow && hasColumn ? {aggregate: {
             cross: true
           }}: {})
+
+          // TODO: aggregate cardinality for calculating size
         }
       },
       sort: {
