@@ -22,6 +22,7 @@ import {
 } from '../vega.schema';
 import {applyConfig, buildModel, formatSignalRef} from './common';
 import {assembleData, assembleFacetData, FACET_SCALE_PREFIX} from './data/assemble';
+import {FacetNode} from './data/facet';
 import {parseData} from './data/parse';
 import {getHeaderType, HeaderChannel, HeaderComponent} from './layout/header';
 import {parseChildrenLayoutSize} from './layout/parse';
@@ -36,6 +37,8 @@ import {ScaleComponent, ScaleComponentIndex} from './scale/component';
 
 export class FacetModel extends ModelWithField {
   public readonly facet: Facet<string>;
+
+  public facetNode: FacetNode;
 
   public readonly child: Model;
 

@@ -30,6 +30,8 @@ export class FacetNode extends DataFlowNode {
       this.rowField = model.field(ROW);
       this.rowName = model.getName('row');
     }
+
+    model.facetNode = this;
   }
 
   get fields() {
@@ -50,6 +52,10 @@ export class FacetNode extends DataFlowNode {
     return this.name;
   }
 
+  private childIndependentScaleField(channel: 'x' | 'y') {
+    // TODO:
+  }
+
   public assemble() {
     const data: VgData[] = [];
 
@@ -60,6 +66,7 @@ export class FacetNode extends DataFlowNode {
         transform: [{
           type: 'aggregate',
           groupby: [this.columnField]
+          // TODO: calculate distinct for child's independent scale
         }]
       });
 
@@ -82,6 +89,7 @@ export class FacetNode extends DataFlowNode {
         transform: [{
           type: 'aggregate',
           groupby: [this.rowField]
+          // TODO: calculate distinct for child's independent scale
         }]
       });
     }
@@ -89,4 +97,3 @@ export class FacetNode extends DataFlowNode {
     return data;
   }
 }
-
