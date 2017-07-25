@@ -8,6 +8,7 @@ import {Facet} from './facet';
 import {Field, FieldDef} from './fielddef';
 import * as log from './log';
 import {AnyMark, AREA, isPrimitiveMark, LINE, Mark, MarkDef} from './mark';
+import {Projection} from './projection';
 import {Repeat} from './repeat';
 import {ResolveMapping} from './resolve';
 import {SelectionDef} from './selection';
@@ -49,6 +50,11 @@ export interface BaseSpec {
   data?: Data;
 
   /**
+   * A geo projection
+   */
+  projection?: Projection;
+
+  /**
    * An array of data transformations such as filter and new field calculation.
    */
   transform?: Transform[];
@@ -86,7 +92,7 @@ export interface GenericUnitSpec<E extends Encoding<any>, M> extends BaseSpec, L
 
   /**
    * A string describing the mark type (one of `"bar"`, `"circle"`, `"square"`, `"tick"`, `"line"`,
-   * `"area"`, `"point"`, `"rule"`, and `"text"`) or a [mark definition object](mark.html#mark-def).
+   * `"area"`, `"point"`, `"rule"`, `"geoshape"`, and `"text"`) or a [mark definition object](mark.html#mark-def).
    */
   mark: M;
 

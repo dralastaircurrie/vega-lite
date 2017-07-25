@@ -15,7 +15,7 @@ export function assembleScaleForModelAndChildren(model: Model) {
 
 export function assembleScalesForModel(model: Model): VgScale[] {
     return keys(model.component.scales).reduce((scales: VgScale[], channel: Channel) => {
-      const scaleComponent= model.component.scales[channel];
+      const scaleComponent = model.component.scales[channel];
       if (scaleComponent.merged) {
         // Skipped merged scales
         return scales;

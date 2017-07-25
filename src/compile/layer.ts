@@ -5,7 +5,7 @@ import {FILL_STROKE_CONFIG} from '../mark';
 import {NonspatialResolve, ResolveMapping, SpatialResolve} from '../resolve';
 import {isLayerSpec, isUnitSpec, LayerSpec, LayoutSizeMixins} from '../spec';
 import {Dict, flatten, keys, vals} from '../util';
-import {isSignalRefDomain, VgData, VgEncodeEntry, VgLayout, VgScale, VgSignal} from '../vega.schema';
+import {isSignalRefDomain, VgData, VgEncodeEntry, VgLayout, VgProjection, VgScale, VgSignal} from '../vega.schema';
 import {AxisComponentIndex} from './axis/component';
 import {parseLayerAxis} from './axis/parse';
 import {applyConfig, buildModel} from './common';
@@ -29,8 +29,6 @@ export class LayerModel extends Model {
   // So I'm just putting generic Model for now.
   public readonly children: Model[];
 
-
-
   constructor(spec: LayerSpec, parent: Model, parentGivenName: string,
     parentGivenSize: LayoutSizeMixins, repeater: RepeaterValue, config: Config) {
 
@@ -43,6 +41,7 @@ export class LayerModel extends Model {
     };
 
     this.initSize(layoutSize);
+
 
     this.children = spec.layer.map((layer, i) => {
       if (isLayerSpec(layer)) {

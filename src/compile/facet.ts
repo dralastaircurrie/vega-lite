@@ -9,7 +9,7 @@ import {ResolveMapping} from '../resolve';
 import {Scale} from '../scale';
 import {FacetSpec} from '../spec';
 import {contains, Dict, keys, stringValue} from '../util';
-import {VgAxis} from '../vega.schema';
+import {VgAxis, VgProjection} from '../vega.schema';
 import {VgDomain, VgMarkGroup, VgScale, VgSignal} from '../vega.schema';
 import {
   isDataRefDomain,
@@ -33,7 +33,6 @@ import {parseGuideResolve} from './resolve';
 import {assembleScalesForModel} from './scale/assemble';
 import {ScaleComponent, ScaleComponentIndex} from './scale/component';
 
-
 export class FacetModel extends ModelWithField {
   public readonly facet: Facet<string>;
 
@@ -43,7 +42,6 @@ export class FacetModel extends ModelWithField {
 
   constructor(spec: FacetSpec, parent: Model, parentGivenName: string, repeater: RepeaterValue, config: Config) {
     super(spec, parent, parentGivenName, config, spec.resolve);
-
 
     this.child = buildModel(spec.spec, this, this.getName('child'), undefined, repeater, config);
     this.children = [this.child];

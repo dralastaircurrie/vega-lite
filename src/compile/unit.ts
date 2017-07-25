@@ -3,16 +3,17 @@ import {Channel, isScaleChannel, NONSPATIAL_SCALE_CHANNELS, SCALE_CHANNELS, Scal
 import {CellConfig, Config} from '../config';
 import * as vlEncoding from '../encoding'; // TODO: remove
 import {Encoding, normalizeEncoding} from '../encoding';
-import {ChannelDef, field, FieldDef, FieldRefOption, getFieldDef, isConditionalDef, isFieldDef} from '../fielddef';
+import {ChannelDef, field, FieldDef, FieldRefOption, getFieldDef, isConditionalDef, isFieldDef, isLegendFieldDef, isScaleFieldDef} from '../fielddef';
 import {Legend} from '../legend';
 import {FILL_STROKE_CONFIG, isMarkDef, Mark, MarkDef, TEXT as TEXT_MARK} from '../mark';
+import {Projection} from '../projection';
 import {defaultScaleConfig, Domain, hasDiscreteDomain, Scale} from '../scale';
 import {SelectionDef} from '../selection';
 import {SortField, SortOrder} from '../sort';
 import {LayoutSizeMixins, UnitSpec} from '../spec';
 import {stack, StackProperties} from '../stack';
 import {Dict, duplicate, extend, vals} from '../util';
-import {VgData, VgEncodeEntry, VgLayout, VgScale, VgSignal} from '../vega.schema';
+import {VgData, VgEncodeEntry, VgLayout, VgProjection, VgScale, VgSignal} from '../vega.schema';
 import {AxisIndex} from './axis/component';
 import {parseUnitAxis} from './axis/parse';
 import {applyConfig} from './common';
@@ -27,10 +28,12 @@ import {parseUnitLegend} from './legend/parse';
 import {initEncoding} from './mark/init';
 import {parseMarkGroup} from './mark/mark';
 import {Model, ModelWithField} from './model';
+import {assembleProjectionForModel} from './projection/assemble';
+import {ProjectionComponent} from './projection/component';
 import {RepeaterValue, replaceRepeaterInEncoding} from './repeat';
 import {assembleScalesForModel} from './scale/assemble';
 import {ScaleIndex} from './scale/component';
-import {assembleTopLevelSignals, assembleUnitSelectionData, assembleUnitSelectionMarks, assembleUnitSelectionSignals, parseUnitSelection} from './selection/selection';
+import {assembleTopLevelSignals, assembleUnitSelectionData, assembleUnitSelectionMarks, assembleUnitSelectionSignals, parseUnitSelection, ProjectComponent} from './selection/selection';
 import {Split} from './split';
 
 
@@ -72,6 +75,9 @@ export class UnitModel extends ModelWithField {
 
     // FIXME: this one seems out of place!
     this.encoding = initEncoding(this.markDef, encoding, this.stack, this.config);
+
+    const parentProjection = parent ? parent.projection : {};
+    this.projection = ProjectionComponent.make(this, spec.projection, parentProjection, this.config, mark, encoding);
 
     this.specifiedAxes = this.initAxes(encoding);
     this.specifiedLegends = this.initLegend(encoding);
@@ -117,10 +123,10 @@ export class UnitModel extends ModelWithField {
 
       const channelDef = encoding[channel];
 
-      if (isFieldDef(channelDef)) {
+      if (isFieldDef(channelDef) && isScaleFieldDef(channelDef)) {
         fieldDef = channelDef;
         specifiedScale = channelDef.scale;
-      } else if (isConditionalDef(channelDef) && isFieldDef(channelDef.condition)) {
+      } else if (isConditionalDef(channelDef) && isFieldDef(channelDef.condition) && isScaleFieldDef(channelDef.condition)) {
         fieldDef = channelDef.condition;
         specifiedScale = channelDef.condition.scale;
       } else if (channel === 'x') {
@@ -163,8 +169,8 @@ export class UnitModel extends ModelWithField {
     return NONSPATIAL_SCALE_CHANNELS.reduce(function(_legend, channel) {
       const channelDef = encoding[channel];
       if (channelDef) {
-        const legend = isFieldDef(channelDef) ? channelDef.legend :
-          (channelDef.condition && isFieldDef(channelDef.condition)) ? channelDef.condition.legend : null;
+        const legend = isFieldDef(channelDef) && isLegendFieldDef(channelDef) ? channelDef.legend :
+          (channelDef.condition && isFieldDef(channelDef.condition)) && isLegendFieldDef(channelDef.condition) ? channelDef.condition.legend : null;
 
         if (legend !== null && legend !== false) {
           _legend[channel] = {...legend};
@@ -177,6 +183,10 @@ export class UnitModel extends ModelWithField {
 
   public parseData() {
     this.component.data = parseData(this);
+  }
+
+  public parseProjection() {
+    return 1;
   }
 
   public parseLayoutSize() {

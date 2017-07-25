@@ -9,7 +9,7 @@ import {Repeat} from '../repeat';
 import {ResolveMapping} from '../resolve';
 import {RepeatSpec} from '../spec';
 import {Dict, keys} from '../util';
-import {isSignalRefDomain, VgData, VgLayout, VgScale, VgSignal} from '../vega.schema';
+import {isSignalRefDomain, VgData, VgLayout, VgProjection, VgScale, VgSignal} from '../vega.schema';
 import {buildModel} from './common';
 import {assembleData} from './data/assemble';
 import {parseData} from './data/parse';

@@ -1,5 +1,6 @@
-import {NONSPATIAL_SCALE_CHANNELS, SCALE_CHANNELS, ScaleChannel} from '../../channel';
-import {FieldDef, getFieldDef, isConditionalDef, isFieldDef} from '../../fielddef';
+import {NONSPATIAL_SCALE_CHANNELS, SCALE_CHANNELS, ScaleChannel, SHAPE} from '../../channel';
+import {FieldDef, getFieldDef, isConditionalDef, isFieldDef, isScaleFieldDef} from '../../fielddef';
+import {GEOSHAPE} from '../../mark';
 import {ResolveMode} from '../../resolve';
 import {NON_TYPE_DOMAIN_RANGE_VEGA_SCALE_PROPERTIES, Scale, scaleCompatible, ScaleType, scaleTypePrecedence} from '../../scale';
 import {contains, keys} from '../../util';
@@ -40,16 +41,21 @@ function parseUnitScaleCore(model: UnitModel): ScaleComponentIndex {
   const {encoding, config} = model;
   const mark = model.mark();
 
-  return SCALE_CHANNELS.reduce((scaleComponents: ScaleComponentIndex, channel: ScaleChannel) => {
+  const scaleComponents: ScaleComponentIndex = {};
+  SCALE_CHANNELS.forEach((channel: ScaleChannel) => {
+    if (mark === GEOSHAPE && channel === SHAPE) {
+      return null;
+    }
+
     let fieldDef: FieldDef<string>;
     let specifiedScale: Scale = {};
 
     const channelDef = encoding[channel];
 
-    if (isFieldDef(channelDef)) {
+    if (isFieldDef(channelDef) && isScaleFieldDef(channelDef)) {
       fieldDef = channelDef;
       specifiedScale = channelDef.scale || {};
-    } else if (isConditionalDef(channelDef) && isFieldDef(channelDef.condition)) {
+    } else if (isConditionalDef(channelDef) && isFieldDef(channelDef.condition) && isScaleFieldDef(channelDef.condition)) {
       fieldDef = channelDef.condition;
       specifiedScale = channelDef.condition.scale || {};
     } else if (channel === 'x') {
@@ -69,8 +75,9 @@ function parseUnitScaleCore(model: UnitModel): ScaleComponentIndex {
         {value: sType, explicit: specifiedScaleType === sType}
       );
     }
-    return scaleComponents;
-  }, {});
+  });
+
+  return scaleComponents;
 }
 
 const scaleTypeTieBreaker = tieBreakByComparing(

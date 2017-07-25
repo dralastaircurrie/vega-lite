@@ -1,4 +1,5 @@
 import {Config} from '../../config';
+import {Field, FieldDef, isFieldDef, isProjectionFieldDef} from '../../fielddef';
 import {VgEncodeEntry} from '../../vega.schema';
 import {getMarkConfig} from '../common';
 import {UnitModel} from '../unit';
@@ -8,18 +9,22 @@ import * as ref from './valueref';
 
 
 function encodeEntry(model: UnitModel, fixedShape?: 'circle' | 'square') {
-  const {config, width, height} = model;
+  const {config, encoding, width, height} = model;
 
   return {
-    ...mixins.pointPosition('x', model, ref.midX(width, config)),
-    ...mixins.pointPosition('y', model, ref.midY(height, config)),
-
+    ...encoding.x && isFieldDef(encoding.x) && isProjectionFieldDef(encoding.x) ? {
+      x: {'field': `${(encoding.x as FieldDef<Field>).field as string}_geo`},
+    } : mixins.pointPosition('x', model, ref.midX(width, config)),
+    ...encoding.y && isFieldDef(encoding.y) && isProjectionFieldDef(encoding.y) ? {
+      y: {'field': `${(encoding.y as FieldDef<Field>).field as string}_geo`},
+    } : mixins.pointPosition('y', model, ref.midY(height, config)),
+    ...mixins.nonPosition('size', model),
     ...mixins.color(model),
     ...mixins.text(model, 'tooltip'),
-    ...mixins.nonPosition('size', model),
     ...shapeMixins(model, config, fixedShape),
     ...mixins.nonPosition('opacity', model),
   };
+
 }
 
 export function shapeMixins(model: UnitModel, config: Config, fixedShape?: 'circle' | 'square'): VgEncodeEntry {

@@ -88,6 +88,62 @@ export type VgDomain = any[] | VgDataRef | DataRefUnionDomain | FieldRefUnionDom
 
 export type VgMarkGroup = any;
 
+
+export type VgProjectionType = 'albers' | 'albersUsa' | 'azimuthalEqualArea' | 'azimuthalEquidistant' | 'conicConformal' | 'conicEqualArea' | 'conicEquidistant' | 'equirectangular' | 'gnomonic' | 'mercator' | 'orthographic' | 'stereographic' | 'transverseMercator';
+
+
+export type VgProjection = {
+  /*
+   * The name of the projection.
+   */
+  name: string;
+  /*
+   * The type of the projection.
+   */
+  type?: VgProjectionType;
+  /*
+   * The clip angle of the projection.
+   */
+  clipAngle?: number | null;
+  /*
+   * Sets the projection’s viewport clip extent to the specified bounds in pixels
+   */
+  clipExtent?: number[][] | null;
+  /*
+   * Sets the projection’s scale factor to the specified value
+   */
+  scale?: number;
+  /*
+   * The translation of the projection.
+   */
+  translate?: number[];
+  /*
+   * The center of the projection.
+   */
+  center?: number[];
+  /**
+   * The rotation of the projection.
+   */
+  rotate?: number[];
+  /*
+   * The desired precision of the projection.
+   */
+  precision?: String;
+  /*
+   * GeoJSON data to which the projection should attempt to automatically fit the translate and scale parameters..
+   */
+  fit?: VgSignalRef | Object | any[];
+  /*
+   * Used in conjunction with fit, provides the pixel area to which the projection should be automatically fit.
+   */
+  extent?: VgSignalRef | number[][];
+  /*
+   * Used in conjunction with fit, provides the width and height in pixels of the area to which the projection should be automatically fit.
+   */
+  size?: VgSignalRef | (number | VgSignalRef)[];
+};
+
+
 export type VgScale = {
   name: string,
   type: ScaleType,
@@ -306,7 +362,29 @@ export interface VgLegendEncode {
 
 export type VgGuideEncode = any; // TODO: replace this (See guideEncode in Vega Schema)
 
-export type VgTransform = VgBinTransform | VgExtentTransform | VgFormulaTransform | VgAggregateTransform | VgFilterTransform | VgImputeTransform | VgStackTransform | VgCollectTransform | VgLookupTransform;
+export type VgTransform = VgBinTransform | VgExtentTransform | VgFormulaTransform | VgAggregateTransform | VgFilterTransform | VgImputeTransform | VgStackTransform | VgCollectTransform | VgLookupTransform | VgGeoPointTransform | VgGeoJSONTransform | VgGeoJSONTransform;
+
+export interface VgGeoPointTransform {
+  type: 'geopoint';
+  projection: string; // projection name
+  fields: string[];
+  as?: string[];
+}
+
+export interface VgGeoShapeTransform {
+  type: 'geoshape';
+  projection: string; // projection name
+  field?: VgFieldRef;
+  as?: string;
+}
+
+export interface VgGeoJSONTransform {
+  type: 'geojson';
+  longitude: number;
+  latitude: number;
+}
+
+export type VgPostEncodingTransform = VgGeoShapeTransform;
 
 export interface VgStackTransform {
   type: 'stack';

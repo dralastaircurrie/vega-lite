@@ -12,6 +12,7 @@ import {UnitModel} from '../unit';
 import {area} from './area';
 import {bar} from './bar';
 import {MarkCompiler} from './base';
+import {geoshape} from './geoshape';
 import {normalizeMarkDef} from './init';
 import {line} from './line';
 import {circle, point, square} from './point';
@@ -31,7 +32,8 @@ const markCompiler: {[type: string]: MarkCompiler} = {
   rect: rect,
   rule: rule,
   circle: circle,
-  square: square
+  square: square,
+  geoshape: geoshape
 };
 
 export function parseMarkDef(model: Model) {
@@ -58,6 +60,7 @@ function parsePathMark(model: UnitModel) {
   const mark = model.mark();
   // FIXME: replace this with more general case for composition
   const details = detailFields(model);
+  const postEncodingTransform = markCompiler[mark].postEncodingTransform;
 
   const role = model.markDef.role || markCompiler[mark].defaultRole;
   const clip = model.markDef.clip !== undefined ? !!model.markDef.clip : scaleClip(model);
@@ -70,7 +73,8 @@ function parsePathMark(model: UnitModel) {
       // If has subfacet for line/area group, need to use faceted data from below.
       // FIXME: support sorting path order (in connected scatterplot)
       from: {data: (details.length > 0 ? FACETED_PATH_PREFIX : '') + model.requestDataName(MAIN)},
-      encode: {update: markCompiler[mark].encodeEntry(model)}
+      encode: {update: markCompiler[mark].encodeEntry(model)},
+      ...postEncodingTransform ? {transform: postEncodingTransform(model)} : {}
     }
   ];
 
@@ -93,6 +97,7 @@ function parsePathMark(model: UnitModel) {
           height: {field: {group: 'height'}}
         }
       },
+      ...postEncodingTransform ? {transform: postEncodingTransform(model)} : {},
       marks: pathMarks
     }];
   } else {
@@ -105,6 +110,7 @@ function parseNonPathMark(model: UnitModel) {
 
   const role = model.markDef.role || markCompiler[mark].defaultRole;
   const clip = model.markDef.clip !== undefined ? !!model.markDef.clip : scaleClip(model);
+  const postEncodingTransform = markCompiler[mark].postEncodingTransform;
 
   const marks: any[] = []; // TODO: vgMarks
 
@@ -116,7 +122,8 @@ function parseNonPathMark(model: UnitModel) {
     ...(clip ? {clip: true} : {}),
     ...(role? {role} : {}),
     from: {data: model.requestDataName(MAIN)},
-    encode: {update: markCompiler[mark].encodeEntry(model)}
+    encode: {update: markCompiler[mark].encodeEntry(model)},
+    ...postEncodingTransform ? {transform: postEncodingTransform(model)} : {},
   });
 
   return marks;

@@ -7,6 +7,7 @@ import {forEach, reduce} from '../encoding';
 import {ChannelDef, field, FieldDef, FieldRefOption, getFieldDef, isFieldDef, isRepeatRef} from '../fielddef';
 import {Legend} from '../legend';
 import * as log from '../log';
+import {Projection} from '../projection';
 import {ResolveMapping} from '../resolve';
 import {hasDiscreteDomain, Scale} from '../scale';
 import {SortField, SortOrder} from '../sort';
@@ -15,7 +16,7 @@ import {StackProperties} from '../stack';
 import {Transform} from '../transform';
 import {getFullName} from '../type';
 import {Dict, extend, vals, varName} from '../util';
-import {VgAxis, VgData, VgEncodeEntry, VgLayout, VgLegend, VgMarkGroup, VgScale, VgSignal, VgSignalRef, VgValueRef} from '../vega.schema';
+import {VgAxis, VgData, VgEncodeEntry, VgLayout, VgLegend, VgMarkGroup, VgProjection, VgScale, VgSignal, VgSignalRef, VgValueRef} from '../vega.schema';
 import {assembleAxes} from './axis/assemble';
 import {AxisComponent, AxisComponentIndex} from './axis/component';
 import {DataComponent} from './data/index';
@@ -25,6 +26,8 @@ import {getHeaderGroup, getTitleGroup, HEADER_CHANNELS, HEADER_TYPES, LayoutHead
 import {assembleLegends} from './legend/assemble';
 import {LegendComponentIndex} from './legend/component';
 import {parseMarkDef} from './mark/mark';
+import {assembleProjections} from './projection/assemble';
+import {parseProjection} from './projection/parse';
 import {RepeaterValue} from './repeat';
 import {assembleScalesForModel} from './scale/assemble';
 import {ScaleComponent, ScaleComponentIndex} from './scale/component';
@@ -51,6 +54,7 @@ export interface Component {
 
   mark: VgMarkGroup[];
   scales: ScaleComponentIndex;
+  projections: VgProjection[];
   selection: Dict<SelectionComponent>;
 
   /** Dictionary mapping channel to VgAxis definition */
@@ -106,11 +110,15 @@ export abstract class Model {
   /** Name map for scales, which can be renamed by a model's parent. */
   protected scaleNameMap: NameMapInterface;
 
+  /** Name map for projections, which can be renamed by a model's parent. */
+  protected projectionNameMap: NameMapInterface;
+
   /** Name map for size, which can be renamed by a model's parent. */
   protected layoutSizeNameMap: NameMapInterface;
 
-
   public readonly config: Config;
+
+  public projection: Projection;
 
   public readonly component: Component;
 
@@ -125,6 +133,7 @@ export abstract class Model {
 
     // Shared name maps
     this.scaleNameMap = parent ? parent.scaleNameMap : new NameMap();
+    this.projectionNameMap = parent ? parent.projectionNameMap : new NameMap();
     this.layoutSizeNameMap = parent ? parent.layoutSizeNameMap : new NameMap();
 
     this.data = spec.data;
@@ -145,10 +154,12 @@ export abstract class Model {
       resolve: resolve || {},
       selection: null,
       scales: null,
+      projections: null,
       axes: {},
       legends: {},
     };
   }
+
 
   public get width(): number | VgSignalRef {
     return this.getLayoutSize('width');
@@ -184,6 +195,7 @@ export abstract class Model {
 
   public parse() {
     this.parseScale();
+    this.parseProjection();
     this.parseMarkDef();
 
     this.parseLayoutSize(); // depends on scale
@@ -194,12 +206,17 @@ export abstract class Model {
     this.parseAxisAndHeader(); // depends on scale
     this.parseLegend(); // depends on scale, markDef
     this.parseMarkGroup(); // depends on data name, scale, layoutSize, axisGroup, and children's scale, axis, legend and mark.
+
+
   }
 
   public abstract parseData(): void;
 
   public abstract parseSelection(): void;
 
+  public parseProjection() {
+    parseProjection(this);
+  }
 
   public parseScale() {
     parseScale(this);
@@ -242,6 +259,10 @@ export abstract class Model {
   public abstract assembleLayoutSignals(): VgSignal[];
 
   public abstract assembleScales(): VgScale[];
+
+  public assembleProjections(): VgProjection[] {
+    return assembleProjections(this);
+  }
 
   public assembleHeaderMarks(): VgMarkGroup[] {
     const {layoutHeaders} = this.component;

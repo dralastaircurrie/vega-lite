@@ -59,6 +59,14 @@ function assemble(model: Model, topLevelProperties: TopLevelProperties) {
   // Config with Vega-Lite only config removed.
   const vgConfig = model.config ? stripConfig(model.config) : undefined;
 
+  const data = [].concat(
+    model.assembleSelectionData([]),
+    model.assembleData()
+  );
+
+  // Projection
+  const projections = model.assembleProjections();
+
   // autoResize has to be put under autosize
   const {autoResize, ...topLevelProps} = topLevelProperties;
 
@@ -74,11 +82,9 @@ function assemble(model: Model, topLevelProperties: TopLevelProperties) {
     // By using Vega layout, we don't support custom autosize
     autosize: topLevelProperties.autoResize ? {type: 'pad', resize: true} : 'pad',
     ...topLevelProps,
+    ...(projections.length > 0 ? {projection: projections} : {}),
     ...(encode ? {encode: {update: encode}} : {}),
-    data: [].concat(
-      model.assembleSelectionData([]),
-      model.assembleData()
-    ),
+    data: data,
     ...model.assembleGroup([
       ...model.assembleLayoutSignals(),
       ...model.assembleSelectionTopLevelSignals([])
