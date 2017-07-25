@@ -27,13 +27,16 @@ export function compile(inputSpec: TopLevelExtendedSpec, logger?: log.LoggerInte
     const spec = normalize(inputSpec, config);
 
     // 3. Instantiate the models with default config by doing a top-down traversal.
+    // This allows us to pass properties that child models derive from their parents via their constructors.
     const model = buildModel(spec, null, '', undefined, undefined, config);
 
-    // 4. Parse each part of the model to produce components that can be merged and assembled easily.
-    // We do a bottom-up traversal over the whole tree to
+    // 4. Parse parts of each model to produce components that can be merged
+    // and assembled easily as a part of model.
+    // In this phase, we do a bottom-up traversal over the whole tree to
     // parse once for each type of components (e.g., data, layout, mark, scale).
     // By doing bottom-up, we starting parsing components of unit specs and
-    // then parse their parent composite specs (if applicable) to merge components.
+    // then parse their parent composite specs (if applicable) to merge child components.
+    //
     // Please see inside model.parse() for order of different components parsed.
     model.parse();
 
