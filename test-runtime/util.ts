@@ -1,8 +1,13 @@
+import {assert} from 'chai';
+import * as fs from 'fs';
+import {sync as mkdirp} from 'mkdirp';
 import {stringValue} from 'vega-util';
 import {SelectionResolutions, SelectionTypes} from '../src/selection';
 import {LayerSpec, TopLevelExtendedSpec, UnitSpec} from '../src/spec';
 import {Type} from '../src/type';
 
+export const generate = process.env.VL_GENERATE_TESTS;
+export const output = 'test-runtime/resources';
 
 export type ComposeType = 'unit' | 'repeat' | 'facet';
 export const selectionTypes: SelectionTypes[] = ['single', 'multi', 'interval'];
@@ -54,18 +59,19 @@ export const hits = {
   }
 };
 
-function base(sel: any, type: 'cond' | 'filter' = 'cond', opts: any = {}): UnitSpec | LayerSpec {
+function base(iter: number, sel: any, opts: any = {}): UnitSpec | LayerSpec {
   const data = {values: opts.values || tuples};
   const x = {field: 'a', type: 'quantitative', ...opts.x};
   const y = {field: 'b',type: 'quantitative', ...opts.y};
   const color = {field: 'c', type: 'nominal', ...opts.color};
+  const size = {value: 100};
   const selection = {sel};
   const mark = 'circle';
 
-  return type === 'cond' ? {
+  return iter % 2 === 0 ? {
     data, selection, mark,
     encoding: {
-      x, y,
+      x, y, size,
       color: {
         condition: {selection: 'sel', ...color},
         value: 'grey'
@@ -76,19 +82,19 @@ function base(sel: any, type: 'cond' | 'filter' = 'cond', opts: any = {}): UnitS
     layer: [{
       selection, mark,
       encoding: {
-        x, y,
-        color: {value: 'grey'}
+        x, y, size, color,
+        opacity: {value: 0.25}
       }
     }, {
       transform: [{filter: {selection: 'sel'}}],
       mark,
-      encoding: {x, y, color}
+      encoding: {x, y, size, color}
     }]
   };
 }
 
-export function spec(compose: ComposeType, sel: any, type: 'cond' | 'filter' = 'cond', opts: any = {}): TopLevelExtendedSpec {
-  const {data, ...spec} = base(sel, type, opts);
+export function spec(compose: ComposeType, iter: number, sel: any, opts: any = {}): TopLevelExtendedSpec {
+  const {data, ...spec} = base(iter, sel, opts);
   switch (compose) {
     case 'unit':
       return {data, ...spec};
@@ -127,5 +133,26 @@ export function pt(key: string, idx: number, parent?: string) {
 export function embedFn(browser: WebdriverIO.Client<void>) {
   return function(spec: TopLevelExtendedSpec) {
     browser.execute((_) => window['embed'](_), spec);
+  };
+}
+
+export function svg(browser: WebdriverIO.Client<void>, path: string, filename: string) {
+  const xml = browser.executeAsync((done) => {
+    window['view'].runAfter((view: any) => view.toSVG().then((_: string) => done(_)));
+  });
+
+  if (generate) {
+    mkdirp(path = `${output}/${path}`);
+    fs.writeFileSync(`${path}/${filename}.svg`, xml.value);
+  }
+
+  return xml.value;
+}
+
+export function testRenderFn(browser: WebdriverIO.Client<void>, path: string) {
+  return function(filename: string) {
+    const render = svg(browser, path, filename);
+    const file = fs.readFileSync(`${output}/${path}/${filename}.svg`);
+    assert.equal(render, file);
   };
 }
